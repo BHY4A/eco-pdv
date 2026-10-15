@@ -112,9 +112,12 @@
     cmax: ['A', 'M', 'F', 'm, n', '\\eta', 'H', 'V_i', '\\Delta T'], cmaxc: ['A', 'M', 'F', 'n', 'D', '\\eta', 'V_i', 'H'],
     xmax: ['F', 'd', 'H'], q: ['C', 'ПДК'], pdv: ['ПДК', 'C_{ф}', 'H', 'V_i', '\\Delta T', 'A', 'F', 'm, n', '\\eta', 'D'], eps: ['M', 'ПДВ']
   };
+  let CUR_S = S_, CUR_W = WHERE;                         // экспликации текущей задачи (1.3–1.6 дополняют общие)
+  const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   function whereList(key, formula, cnt) {
-    const pos = sy => sy === 'm, n' ? formula.search(/mn/) : formula.indexOf(sy);
-    return (WHERE[key] || []).filter(sy => !cnt.expl[sy] && !(sy === 'n' && cnt.expl['m, n']) && pos(sy) >= 0)
+    /* позиция символа в формуле, не считая букв внутри команд TeX (\mathrm, \dfrac …) */
+    const pos = sy => { if (sy === 'm, n') return formula.search(/mn/); const m = new RegExp('(?<!\\\\[A-Za-z]*)' + reEsc(sy)).exec(formula); return m ? m.index : -1; };
+    return (CUR_W[key] || []).filter(sy => !cnt.expl[sy] && !(sy === 'n' && cnt.expl['m, n']) && pos(sy) >= 0)
       .sort((a, b) => pos(a) - pos(b));                     // в порядке появления в формуле (ГОСТ 2.105-95, п. 4.2.15)
   }
   function where(doc, list, ctx, cnt) {
@@ -122,7 +125,7 @@
       cnt.expl[sy] = 1; if (sy === 'm, n') cnt.expl.n = 1;
       const om = ctx.omml(sy === 'm, n' ? 'm,\\ n' : sy, true, MS);
       const last = k === list.length - 1;
-      doc.raw(`<w:p>${doc.pPr(Object.assign({ indent: 0, left: k ? 425 : 0 }, last ? {} : { keepNext: true }))}${doc.runs(k ? '' : 'где ')}${om}${doc.runs(' – ')}${doc.runs(doc.htmlSegs(S_[sy] + (last ? '.' : ';')))}</w:p>`);
+      doc.raw(`<w:p>${doc.pPr(Object.assign({ indent: 0, left: k ? 425 : 0 }, last ? {} : { keepNext: true }))}${doc.runs(k ? '' : 'где ')}${om}${doc.runs(' – ')}${doc.runs(doc.htmlSegs((CUR_S[sy] || '') + (last ? '.' : ';')))}</w:p>`);
     });
   }
   /* ссылки на формулы пособия: «по формуле (1.6)» → «по формуле (1.6) [1]» */
@@ -190,7 +193,7 @@
           const img = ctx.png[it.id];
           if (!img) break;
           const nn = cnt.fig + 1;
-          doc.html((it.id === 'prof' ? 'Распределение приземных концентраций представлено на рисунке {n}.' : 'Сравнение фактических выбросов с ПДВ представлено на рисунке {n}.').replace('{n}', nn), { keepNext: true });
+          doc.html((it.lead ? it.lead : it.id === 'prof' ? 'Распределение приземных концентраций представлено на рисунке {n}.' : 'Сравнение фактических выбросов с ПДВ представлено на рисунке {n}.').replace('{n}', nn), { keepNext: true });
           const w = 16, h = Math.min(w * img.h / img.w, 12);
           doc.image(img.data, 'png', h === 12 ? 12 * img.w / img.h : w, h);
           doc.p('Рисунок ' + nn + ' – ' + it.title.replace(/\.$/, ''), { style: 'Caption' });
@@ -203,9 +206,9 @@
     }
   }
 
-  function inputList(doc, P, ctx) {
+  function inputList(doc, P, ctx, given) {
     const f = ctx.L.fin;
-    const items = +P.task === 2 ? [
+    const items = given ? given : +P.task === 2 ? [
       ['M_{пыли}', P.Mdust, 'г/с', 'выброс пыли'], ['C_{ф}^{пыли}', P.cf_dust, 'мг/м³', 'фоновая концентрация пыли'],
       ['H', P.H, 'м', 'высота трубы'], ['D', P.D, 'м', 'диаметр устья трубы'], ['W', P.W, 'м/с', 'скорость выхода пылевоздушной смеси'],
       ['T_{п}', P.Tg, '°C', 'температура пылевоздушной смеси'], ['T_{в}', P.Tv, '°C', 'температура окружающего воздуха'],
@@ -221,8 +224,9 @@
       ['\\eta', P.eta, '', 'коэффициент рельефа местности (ровная местность)'], ['N', 1, '', 'число дымовых труб']
     ];
     items.forEach(([sym, v, u, d], k) => {
-      const om = ctx.omml(sym + '=' + String(f(v)).replace(',', '{,}').replace('/', '/') + (u ? '\\ \\text{' + u + '}' : ''), true, MS);
-      doc.raw(`<w:p>${doc.pPr({ indent: 709 })}${om}${doc.runs(' – ' + d + (k === items.length - 1 ? '.' : ';'))}</w:p>`);
+      const vs = typeof v === 'string' && /\\/.test(v) ? v : String(f(v)).replace(',', '{,}').replace('-', '-');
+      const om = ctx.omml(sym + '=' + vs + (u ? (u === '\\%' ? '\\ ' + u : '\\ \\text{' + u + '}') : ''), true, MS);
+      doc.raw(`<w:p>${doc.pPr({ indent: 709 })}${om}${doc.runs(doc.htmlSegs(' – ' + d + (k === items.length - 1 ? '.' : ';')))}</w:p>`);
     });
   }
 
@@ -230,6 +234,8 @@
   function conclusions(R, L, ext) {
     if (ext === undefined) ext = true;
     L.use(R);
+    const SPc = L.TX && L.TX(R.task);
+    if (SPc) return SPc.rep.conclusions(R, ext);
     const P = R.P, o = R.o, fk = L.fk, fa = L.fauto, out = [];
     if (R.task === 2) {
       const x = R.by.dust;
@@ -261,15 +267,21 @@
     MS = small ? 24 : 28;
     const doc = new DOCX.Doc(Object.assign({ readable: READ, italVars: true }, small ? { size: 24, line: 240 } : {}));
     const R = ctx.S.R, P = R.P, T2 = R.task === 2, fin = ctx.L.fin;
+    const SP = ctx.L.TX(R.task);
+    CUR_S = SP ? Object.assign({}, S_, SP.rep.sym) : S_; CUR_W = SP ? Object.assign({}, WHERE, SP.rep.where) : WHERE;
     ctx.L.use(R);
-    titlePage(doc, Object.assign({}, T, { _variant: P.variant, _title: T2 ? META.title2 : META.title }));
+    titlePage(doc, Object.assign({}, T, { _variant: P.variant, _title: SP ? SP.rep.title : T2 ? META.title2 : META.title }));
     /* разделы «Цель работы», «Задание», «Исходные данные» можно отключить; первый заголовок после титульного листа — с новой страницы */
     let first = true;
     const H2 = t => { doc.p(t, Object.assign({ style: 'Heading2' }, first ? { pageBreakBefore: true } : {})); first = false; };
     const secGoal = T.secGoal !== false, secTask = T.secTask !== false, secData = T.secData !== false;
-    if (secGoal) { H2('Цель работы'); doc.p(T2 ? META.goal2 : META.goal); }
+    if (secGoal) { H2('Цель работы'); doc.p(SP ? SP.rep.goal : T2 ? META.goal2 : META.goal); }
     if (secTask) H2('Задание');
-    if (!secTask) { /* пропуск */ } else if (T2) {
+    if (!secTask) { /* пропуск */ } else if (SP) {
+      const tk = SP.rep.task(P);
+      tk.lead.forEach(t => doc.html(t));
+      if (tk.need) { doc.p('Необходимо:', { keepNext: true }); listOut(doc, tk.need); }
+    } else if (T2) {
       doc.html(`В отделении предварительной подготовки сырья на предприятии от установленного оборудования выделяется пыль, которая системой вытяжной вентиляции выбрасывается в атмосферу с температурой T<sub>п</sub> = ${fin(P.Tg)} °C. Выбросы проводятся со скоростью W = ${fin(P.W)} м/с через трубу высотой H = ${fin(P.H)} м с устьем диаметром D = ${fin(P.D)} м. Температура окружающей среды T<sub>в</sub> = ${fin(P.Tv)} °C.`);
       doc.html(`Необходимо обосновать необходимость установки аппарата пылеулавливания на линии вытяжной вентиляции, если ПДК<sup>пыли</sup> = ${fin(P.pdk_dust)} мг/м³ [1].`);
     } else {
@@ -282,7 +294,18 @@
         'определить требуемую степень очистки и дать рекомендации по снижению выбросов, если фактический выброс какого-либо вещества превышает ПДВ']);
     }
     const cnt = { fig: 0, tab: 0, eq: 0, seen: {}, expl: {} };
-    if (secData) {
+    if (secData && SP) {
+      H2('Исходные данные');
+      doc.p('Согласно варианту № ' + P.variant + ' (табл. ' + SP.table + ' [1]) приняты следующие значения:', { keepNext: true });
+      inputList(doc, P, ctx, SP.rep.inputs(P));
+      const dt = SP.rep.dataTable && SP.rep.dataTable(R);
+      if (dt) {
+        cnt.tab++;
+        doc.p(dt.text.replace('{n}', cnt.tab), { keepNext: true });
+        doc.p('Таблица ' + cnt.tab + ' – ' + dt.caption, { style: 'TableCaption' });
+        doc.table(dt.head, dt.rows, { cols: dt.cols });
+      }
+    } else if (secData) {
     H2('Исходные данные');
     doc.p('Согласно варианту № ' + P.variant + ' (табл. ' + (T2 ? '1.3' : '1.2') + ' [1]) приняты следующие значения:', { keepNext: true });
     inputList(doc, P, ctx);
@@ -295,7 +318,7 @@
     }
     }
     ['s1', 's2', 's3'].forEach((tab, i) => {
-      H2((i + 1) + ' ' + META.stages[tab]);
+      H2((i + 1) + ' ' + (SP ? SP.rep.stages[i] : META.stages[tab]));
       cnt.sec = i + 1; cnt.sub = 0;
       addItems(doc, R['L' + (i + 1)].items, ctx, opt, cnt);
     });
@@ -304,7 +327,7 @@
     if (T.secSrc !== false) {
       doc.p('Список использованных источников', { style: 'Heading2', pageBreakBefore: !!READ });
       const src = [T.src || META.src];
-      if (opt.ext && (P.prof || P.hmin)) src.push(META.ond);
+      if (!SP && opt.ext && (P.prof || P.hmin)) src.push(META.ond);
       src.forEach((t, k) => doc.p((k + 1) + ' ' + t.replace(/\.?$/, '.')));
     } else doc.body = doc.body.map(x => x.replace(/ \[1\]/g, ''));   // без списка источников ссылки [1] не нужны
     return doc.build({ title: 'Отчёт: задача 1.' + R.task + ', вариант ' + P.variant, author: T.student || '' });

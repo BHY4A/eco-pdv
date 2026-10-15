@@ -70,8 +70,11 @@
   const VKEYS1 = ['Mco', 'Mno2', 'Mso2', 'Mdust', 'H', 'D', 'W', 'Tg', 'Tv', 'A'];
   const VKEYS2 = ['Mdust', 'cf_dust', 'H', 'D', 'W', 'Tg', 'Tv', 'A'];
   const VKEYS = VKEYS1;
-  const vkeys = task => +task === 2 ? VKEYS2 : VKEYS1;
-  const vlist = task => +task === 2 ? D.variants2 : D.variants;
+  /* задачи 1.3–1.6 описаны в tasks.js (реестр ECOTASKS) */
+  const TX = task => +task >= 3 && root.ECOTASKS ? root.ECOTASKS[+task] : null;
+  const vkeys = task => TX(task) ? TX(task).vkeys : +task === 2 ? VKEYS2 : VKEYS1;
+  const vlist = task => TX(task) ? TX(task).variants : +task === 2 ? D.variants2 : D.variants;
+  const nkeys = task => TX(task) ? (TX(task).nkeys || []) : NKEYS;
   const NKEYS = ['eta', 'Fg', 'Fd'].concat(...SUB.map(s => ['cf_' + s.key, 'pdk_' + s.key]));
   function defaults() {
     const v = D.variants[0];
@@ -82,9 +85,10 @@
     return Object.assign(d, { mode: 'book', sumEff: true, hmin: true, prof: true });
   }
   function fromVariant(no, task) {
-    task = +task === 2 ? 2 : 1;
+    task = TX(task) ? +task : +task === 2 ? 2 : 1;
     const L = vlist(task), v = L.find(x => x.no === +no) || L[0];
     const d = defaults();
+    if (TX(task)) Object.assign(d, TX(task).defaults || {});
     d.task = task; d.variant = v.no; vkeys(task).forEach(k => d[k] = v[k]);
     return d;
   }
@@ -96,12 +100,12 @@
     if (v >= 0.5) return { n: rd(0.532 * v * v - 2.13 * v + 3.13, 2), eqn: '1.11' };
     return { n: rd(4.4 * v, 2), eqn: '1.12' };
   }
-  function source(P, H) {
+  function source(P, H, opt) {
     const pi = BOOK ? 3.14 : Math.PI;
     const dT = rd(P.Tg - P.Tv, 1);
     const f = dT > 0 ? rd(1000 * P.W * P.W * P.D / (H * H * dT), 2) : Infinity;
     const hot = f < 100;
-    const Vi = rd(pi * P.D * P.D / 4 * P.W, 2);
+    const Vi = rd(pi * P.D * P.D / 4 * P.W, opt && opt.vdig || 2);
     const Vm1 = rd(1.3 * P.W * P.D / H, 2);
     const o = { H, dT, f, hot, Vi, Vm1, pi };
     if (hot) {
@@ -185,6 +189,7 @@
    * ================================================================= */
   function compute(P) {
     BOOK = P.mode !== 'exact';
+    if (TX(P.task)) { const R = TX(P.task).compute(P); R.book = BOOK; R.task = +P.task; return R; }
     ['A', 'H', 'D', 'W', 'Tg', 'Tv', 'eta', 'Fg', 'Fd'].forEach(k => { if (!(+P[k] > 0) && k !== 'Tv') throw new Error('параметр ' + k + ' должен быть положительным'); });
     if (!(P.Tg - P.Tv > 0)) throw new Error('температура выбрасываемой смеси должна быть выше температуры воздуха');
     const T2 = +P.task === 2;
@@ -391,7 +396,7 @@
 
   /* сводка по всем вариантам — для преподавателя / тьютора */
   function summary(opt, task) {
-    task = +task === 2 ? 2 : 1;
+    task = TX(task) ? +task : +task === 2 ? 2 : 1;
     return vlist(task).map(v => {
       const P = Object.assign(fromVariant(v.no, task), opt || {}, { task, variant: v.no, hmin: false, prof: false });
       vkeys(task).forEach(k => P[k] = v[k]);
@@ -410,6 +415,7 @@
   }
 
   function use(R) { if (R) BOOK = !!R.book; }
-  const api = { vkeys, vlist, VKEYS2, use, compute, defaults, fromVariant, summary, profile, s1, fnum, fauto, fk, fin, n, nk, VKEYS, NKEYS, dustAdvice, GAS_ADVICE };
+  const _ = { Report, rd, book: () => BOOK, source, pdv, cmax, nCoef, tx, nk, n0, n };
+  const api = { _, TX, nkeys, vkeys, vlist, VKEYS2, use, compute, defaults, fromVariant, summary, profile, s1, fnum, fauto, fk, fin, n, nk, VKEYS, NKEYS, dustAdvice, GAS_ADVICE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LABS = api;
 })(typeof window !== 'undefined' ? window : globalThis);

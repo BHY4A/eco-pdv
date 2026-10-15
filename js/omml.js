@@ -27,6 +27,7 @@
           const t = el.textContent, mv = el.getAttribute('mathvariant');
           if (mv === 'bold') return run(t, 'b');
           if (/[\u0400-\u04ff]/.test(t)) return run(t, 'nor');
+          if (mv === 'normal' && /^[A-Za-z]+$/.test(t)) return run(t, 'nor');                    // \mathrm{CO}, \mathrm{C} — химические символы прямым шрифтом в любом редакторе
           if (mv === 'normal' || t.length > 1 || /[\u0370-\u03ff]/.test(t)) return run(t, 'p');   // ГОСТ 2.304: греческие и кириллица — прямые
           return run(t);
         }
