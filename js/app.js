@@ -23,7 +23,7 @@
   const PFX = 'eco-';
 
   const LABS_META = [
-    { id: 'data', no: '◦', short: 'Данные', t: 'Исходные данные', s: 'Вариант, ПДК, отчёт' },
+    { id: 'data', no: '◦', short: 'Данные', t: 'Исходные данные', s: 'Параметры, методика, отчёт' },
     { id: 's1', no: '1', short: 'Источник', t: 'Параметры источника', s: 'ΔT, f, Vᵢ, m, Vₘ, n' },
     { id: 's2', no: '2', short: 'Cmax', t: 'Приземные концентрации', s: 'Cmax, Xmax, сравнение с ПДК' },
     { id: 's3', no: '3', short: 'ПДВ', t: 'ПДВ и очистка', s: 'ПДВ, степень очистки, H' },
@@ -115,7 +115,7 @@
   }
   function stamp(no) {
     const P = S.P;
-    const head = `<table class="stamp" aria-label="Штамп"><tr><td class="k">Работа</td><td class="v">${no ? 'Этап ' + no : 'Данные'}</td><td class="k">Лист</td><td class="v">${no || 0} / 3</td></tr>`;
+    const head = `<table class="stamp" aria-label="Штамп"><tr><td class="k">Работа</td><td class="v">${no === 'all' ? 'Сводка' : no ? 'Этап ' + no : 'Данные'}</td><td class="k">Лист</td><td class="v">${no === 'all' ? '—' : no || 0} / 3</td></tr>`;
     if (SP()) return head + `<tr><td class="k">Вариант</td><td class="v">${P.variant}${isEdited() ? '*' : ''}</td><td class="k">Задача</td><td class="v">1.${TK()}</td></tr>` + SP().stamp(P) + '</table>';
     return head + `
       <tr><td class="k">Вариант</td><td class="v">${P.variant}${isEdited() ? '*' : ''}</td><td class="k">A</td><td class="v">${fin(P.A)}</td></tr>
@@ -395,7 +395,7 @@
           <h2>1. Параметры варианта</h2>
           <div class="form-grid fg4">${(sp ? sp.fields : T2 ? FIELDS2 : FIELDS).map(f => fld(f[0], f[1], f[2], f[3], P[f[0]], (V[f[0]] === null) !== (P[f[0]] === null) || +V[f[0]] !== +P[f[0]])).join('')}</div>
           <div class="dact"><button class="btn" id="reset-var">Сбросить к варианту ${P.variant}</button><button class="btn" id="go-s1">Перейти к этапу 1 →</button></div>
-          <details class="adv"><summary>Таблица ${TBL()} — все ${NVf()} вариантов (щелчок по строке выбирает вариант)</summary><div class="in"><div class="tbl var-table"><table><thead><tr><th class="num">№</th>${vhead.map(k => `<th class="num">${k}</th>`).join('')}</tr></thead><tbody>${vrows}</tbody></table></div><p class="dhint">${sp ? sp.vhint : 'Выбросы M — в г/с. Для газовых выбросов F = 1, для пыли F = 3; число дымовых труб N = 1.'}</p></div></details>
+          <details class="adv"><summary>Таблица ${TBL()} — все ${NVf()} ${plVar(NVf())} (щелчок по строке выбирает вариант)</summary><div class="in"><div class="tbl var-table"><table><thead><tr><th class="num">№</th>${vhead.map(k => `<th class="num">${k}</th>`).join('')}</tr></thead><tbody>${vrows}</tbody></table></div><p class="dhint">${sp ? sp.vhint : 'Выбросы M — в г/с. Для газовых выбросов F = 1, для пыли F = 3; число дымовых труб N = 1.'}</p></div></details>
           ${advHtml}
           ${TK() !== 1 ? '' : `<details class="adv"><summary>Расчёт выбросов M по годовому расходу топлива (табл. 1.1)</summary><div class="in" id="fuel">${fuelHtml()}</div></details>`}
         </section>
@@ -410,7 +410,7 @@
           </div>
         </section>
         <section class="dsec">
-          <h2>3. Отчёт</h2>
+          <h2>3. Отчёт и файлы</h2>
           <h3>Титульный лист</h3>
           <div class="form-grid fg4">
             ${tfld('student', 'Студент (Ф. И. О.)', 'Иванов И. И.')}${tfld('group', 'Группа', '741-15')}${tfld('teacher', 'Проверил', 'Савельев С. Н.')}${tfld('discipline', 'Дисциплина', '')}
@@ -459,6 +459,7 @@
     $$('#main [data-docx]').forEach(b => b.onclick = () => makeDocx(b));
     $$('.var-table tr[data-v]').forEach(tr => tr.onclick = () => setVariant(+tr.dataset.v));
   }
+  function plVar(n) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? 'вариант' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'варианта' : 'вариантов'; }
   function tfld(key, label, ph) {
     return `<div class="fld"><label for="t-${key}"><span>${label}</span></label><input id="t-${key}" data-tkey="${key}" value="${esc(S.T[key] || '')}" placeholder="${esc(ph)}" autocomplete="off" class="txt"></div>`;
   }
@@ -672,7 +673,7 @@
     const r0 = list.find(s => s.R); if (r0) L.use(r0.R);
     const rows = list.map(s => s.err ? `<tr><td class="num">${s.no}</td><td colspan="${SC().length - 1}">${esc(s.err)}</td></tr>` : `<tr data-v="${s.no}" class="${s.no === S.P.variant ? 'on' : ''}">${SC().map(c => `<td class="num">${c[1](s.R)}</td>`).join('')}</tr>`).join('');
     main.innerHTML = `<article class="sheet">
-      <header class="sheet-head"><div><div class="eyebrow">Для преподавателя и тьютора</div><h1>${TITLES.all}</h1><p class="lead">Ответы задачи 1.${TK()} по всем ${NVf()} вариантам табл. ${TBL()} при текущих настройках методики (${S.P.mode === 'exact' ? 'точный расчёт' : 'округление как в методичке'}${SP() ? '' : ', фон и ПДК — как на вкладке «Исходные данные»'}). Щелчок по строке открывает вариант.${TK() <= 3 ? ' C<sub>max</sub> — мг/м³, ПДВ — г/с.' : ''}</p></div>${stamp(0)}</header>
+      <header class="sheet-head"><div><div class="eyebrow">Для преподавателя и тьютора</div><h1>${TITLES.all}</h1><p class="lead">Ответы задачи 1.${TK()} по всем ${NVf()} вариантам табл. ${TBL()} при текущих настройках методики (${S.P.mode === 'exact' ? 'точный расчёт' : 'округление как в методичке'}${SP() ? '' : ', фон и ПДК — как на вкладке «Исходные данные»'}). Щелчок по строке открывает вариант.${TK() <= 3 ? ' C<sub>max</sub> — мг/м³, ПДВ — г/с.' : ''}</p></div>${stamp('all')}</header>
       <div class="sheet-body rep">
         <h2>Ответы по вариантам</h2>
         <div class="tbl var-table sum-table"><table><thead><tr>${SC().map(c => `<th class="num">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
