@@ -507,7 +507,7 @@
     const data = COMP5.map((c, k) => ({ x: Vs, y: Vs.map(v => qOf(c.key, v)), name: c.html + ' (×10⁻³ мг/(м·с))', type: 'scatter', mode: 'lines', line: { color: th.c[k], width: 1.8, dash: dash[k] }, hovertemplate: c.html + ': %{y:.3f}<extra></extra>' }));
     const V = +R.P.V;
     data.push({ x: R.sub.map(() => V), y: R.sub.map(x => x.Q), name: 'V = ' + fin(V) + ' км/ч', type: 'scatter', mode: 'markers', marker: { color: th.fg, size: 7, symbol: 'circle-open', line: { width: 1.6 } }, hovertemplate: '%{y:.3f}<extra></extra>' });
-    const lay = { height: (ex && ex.h) || 340, separators: ', ', margin: { l: 58, r: 14, t: 34, b: 46 }, paper_bgcolor: th.paper, plot_bgcolor: th.bg, font: { family: '"IBM Plex Sans", "Segoe UI", Arial, sans-serif', size: 12, color: th.fg },
+    const lay = { height: (ex && ex.h) || 340, separators: ', ', margin: { l: 58, r: 14, t: 34, b: 46 }, paper_bgcolor: th.paper, plot_bgcolor: th.bg, font: { family: (getComputedStyle(document.documentElement).getPropertyValue('--f-body').trim() || '"IBM Plex Sans", "Segoe UI", Arial, sans-serif'), size: 12, color: th.fg },
       showlegend: true, hovermode: 'x unified', legend: { orientation: 'h', x: 0, y: 1.02, yanchor: 'bottom', bgcolor: 'rgba(0,0,0,0)', font: { size: 11 } } };
     const ax = t => ({ title: { text: t, font: { size: 12, color: th.fg } }, showline: true, mirror: true, linecolor: th.axis, ticks: 'inside', tickcolor: th.axis, gridcolor: th.grid, griddash: 'dot', zeroline: false, automargin: true });
     lay.xaxis = Object.assign(ax('V — скорость движения, км/ч'), { range: [10, 80] }); lay.yaxis = Object.assign(ax('Q, ×10⁻³ мг/(м·с)'), { rangemode: 'tozero' });

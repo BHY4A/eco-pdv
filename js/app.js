@@ -742,6 +742,7 @@
     ta.remove();
   }
   function downloadBlob(name, blob) {
+    if (window.SUITE && SUITE.save) return SUITE.save(name, blob);   // общий механизм (suite.js): сайт или артефакт claude.ai
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
@@ -884,6 +885,7 @@ ${parts.join('\n')}</body></html>`;
     $('#var-next').onclick = () => setVariant(S.P.variant + 1);
     $('#share').onclick = share;
     $('#theme').onclick = themeToggle;
+    window.addEventListener('suite:style', () => { if (S.tab !== 'data') renderTab(); });   // новый стиль — перерисовать графики в его цветах и шрифтах
     const setTopH = () => document.documentElement.style.setProperty('--top-h', $('.top').offsetHeight + 'px');
     window.addEventListener('resize', setTopH); setTopH();
     load(); loadT();
