@@ -218,7 +218,7 @@
       <div class="inp${unit ? ' has-u' : ''}"><input id="f-${key}" data-key="${key}" inputmode="decimal" value="${esc(val === null || val === undefined ? '' : typeof val === 'number' ? String(val).replace('.', ',') : val)}" autocomplete="off">${unit ? `<span class="unit">${unit}</span>` : ''}</div></div>`;
   }
   function optRow(title, desc, ctl) {
-    const key = (ctl.match(/data-t?key="(\w+)"/) || [])[1];
+    const key = (ctl.match(/data-[tp]?key="(\w+)"/) || [])[1];
     const ex = key && PV[key] ? `<div class="opt-ex" data-pv="${key}">${exHtml(key)}</div>` : '';
     return `<div class="opt${ctl.startsWith('<div class="seg"') ? ' has-seg' : ''}"><div class="opt-t"><b>${title}</b>${desc ? `<span>${desc}</span>` : ''}</div><div class="opt-c">${ctl}</div>${ex}</div>`;
   }
@@ -229,7 +229,50 @@
     return box(d.la, d.a, !d.b_on) + box(d.lb, d.b, d.b_on) + (d.note ? `<p class="ex-note">${d.note}</p>` : '');
   }
   function altR(patch) { try { return L.compute(Object.assign({}, S.P, patch)); } catch (e) { return null; } }
+  /* превью разделов отчёта: какие заголовки идут в начале отчёта */
+  function outlinePv(key) {
+    const items = [['secGoal', 'Цель работы'], ['secTask', 'Задание'], ['secData', 'Исходные данные'], ['', '1 Расчёт …']];
+    const page = on => `<div class="ex-paper">${items.filter(([k]) => k !== key || on).map(([k, t]) => `<p class="toc${k === key ? ' h' : ''}">${t}</p>`).join('')}</div>`;
+    return { la: 'Без раздела', a: page(false), lb: 'С разделом', b: page(true), b_on: S.T[key] !== false };
+  }
   const PV = {
+    eqNum() {
+      const o = S.R && S.R.o && S.R.o.m ? S.R.o : { f: 1.2 };
+      const page = on => `<div class="ex-paper"><p>Параметр f для нагретого выброса:</p><div class="ex-math">f = 10³W²D/(H²ΔT) = ${fk(o.f, 2)}${on ? '<span class="ex-no">(2)</span>' : ''}</div></div>`;
+      return { la: 'Без номеров', a: page(false), lb: 'С номерами', b: page(true), b_on: !!S.T.eqNum };
+    },
+    compact() {
+      const t = 'Максимальная приземная концентрация вредного вещества достигается на расстоянии X<sub>max</sub> от источника и сравнивается с ПДК с учётом фоновой концентрации.';
+      return { la: '14 пт, интервал 1,5', a: `<div class="ex-paper lh15"><p>${t}</p></div>`, lb: '12 пт, интервал 1,0', b: `<div class="ex-paper fs12 lh10"><p>${t}</p></div>`, b_on: !!S.T.compact };
+    },
+    secGoal() { return outlinePv('secGoal'); },
+    secTask() { return outlinePv('secTask'); },
+    secData() { return outlinePv('secData'); },
+    secSrc() {
+      const page = on => `<div class="ex-paper"><p>Коэффициент F принимаем по табл. 1.2${on ? ' [1]' : ''}.</p>${on ? '<p class="h">Список использованных источников</p><p class="cap">1. Фридланд С. В. Промышленная экология. Основы инженерных расчётов…</p>' : '<p class="cap">…конец отчёта.</p>'}</div>`;
+      return { la: 'Без списка и ссылок', a: page(false), lb: 'Со списком', b: page(true), b_on: S.T.secSrc !== false };
+    },
+    sumEff() {
+      const on = !!S.P.sumEff, R = S.R;
+      const q = R && R.sum && R.sum.q ? R.sum : null;
+      const b = q ? `<div class="ex-f">q = C<sup>SO₂</sup>/ПДК + C<sup>NO₂</sup>/ПДК = ${fk(q.q, 3)} ${q.ok ? '≤' : '>'} 1</div><p class="ex-p">${q.ok ? 'Совместное действие SO<sub>2</sub> и NO<sub>2</sub> допустимо.' : 'Условие (1.1) не выполняется — нужно снижать выбросы SO<sub>2</sub> и NO<sub>2</sub>.'}</p>` : '<p class="ex-p">Проверка по формуле (1.1).</p>';
+      return { la: 'Без проверки (как в примере пособия)', a: '<p class="ex-p">Проверка эффекта суммации в расчёт и отчёт не входит.</p>', lb: 'С проверкой (1.1)', b, b_on: on };
+    },
+    hmin() {
+      const on = !!S.P.hmin, R = on ? S.R : altR({ hmin: true }); L.use(S.R);
+      const rows = R ? R.excList.map(x => `<div class="ex-f">${x.s.name}: H<sub>min</sub> = ${x.Hmin === Infinity ? '> 5000' : isFinite(x.Hmin) ? fin(Math.ceil(x.Hmin)) : '—'} м</div>`).join('') : '';
+      const b = rows ? rows + `<p class="ex-p">Вместо H = ${fin(S.P.H)} м.</p>` : '<p class="ex-p">В этом варианте ПДК нигде не превышена — раздел не появится.</p>';
+      return { la: 'Без раздела (как в пособии)', a: '<p class="ex-p">Нормативы обеспечиваются только очисткой газов.</p>', lb: 'С наименьшей высотой трубы', b, b_on: on };
+    },
+    prof() {
+      const fig = this.figs().b;
+      return { la: 'Без графика (как в пособии)', a: '<p class="ex-p">Только C<sub>max</sub> и X<sub>max</sub> — без распределения по оси факела.</p>', lb: 'С графиком C(x)', b: fig, b_on: !!S.P.prof };
+    },
+    indK() {
+      const on = !!S.P.indK, a = on ? altR({ indK: false }) : S.R, b = on ? S.R : altR({ indK: true }); L.use(S.R);
+      const body = r => r ? `<div class="ex-f">У<sub>п</sub> = ${fin(r.Up)} руб./год</div><div class="ex-f">У = ${fin(r.U)} руб./год</div>` : '';
+      return { la: 'Без коэффициентов (как в пособии)', a: body(a), lb: 'С коэффициентами табл. 1.14', b: body(b), b_on: on };
+    },
     mode() {
       const a = altR({ mode: 'book' }), b = altR({ mode: 'exact' });
       L.use(S.R);
@@ -399,7 +442,7 @@
           ${advHtml}
           ${TK() !== 1 ? '' : `<details class="adv"><summary>Расчёт выбросов M по годовому расходу топлива (табл. 1.1)</summary><div class="in" id="fuel">${fuelHtml()}</div></details>`}
         </section>
-        <section class="dsec">
+        <section class="dsec set set-calc" data-set="настройки расчёта">
           <h2>2. Методика расчёта</h2>
           <p class="dlead">Как округлять и какие дополнительные проверки выполнять. Значения по умолчанию воспроизводят пример решения пособия.</p>
           <div class="opts">
@@ -410,7 +453,7 @@
             ${sp ? '' : optRow('Распределение концентраций C(x)', 'График по оси факела и граница зоны превышения ПДК (форма кривой — по ОНД-86).', swP('prof'))}
           </div>
         </section>
-        <section class="dsec">
+        <section class="dsec set set-rep" data-set="настройки отчёта">
           <h2>3. Отчёт и файлы</h2>
           <h3>Титульный лист</h3>
           <div class="form-grid fg4">
@@ -423,7 +466,7 @@
           <h3>Содержание и оформление</h3>
           <div class="opts">
             ${optRow('Пояснения к формулам', 'Перед формулой — что считается и зачем.', sw('explain'))}
-            ${optRow('Состав отчёта', sp ? sp.contentText : '«По заданию» — только пункты 1–5 задачи 1.1: C<sub>max</sub>, X<sub>max</sub>, сравнение с ПДК, ПДВ, степень очистки и рекомендации. «Расширенный» — дополнительно эффект суммации, графики (чёрно-белые), распределение концентраций и высота трубы.', seg('T', 'content', S.T.content || 'task', [['task', 'По заданию'], ['ext', 'Расширенный']], 'str'))}
+            ${optRow('Состав отчёта', sp ? sp.contentText : '«По заданию» — только пункты 1–5 задачи 1.1: C<sub>max</sub>, X<sub>max</sub>, сравнение с ПДК, ПДВ, степень очистки и рекомендации. «Расширенный» — дополнительно графики (чёрно-белые) и разделы, включённые в «Методике расчёта»: эффект суммации, распределение концентраций, высота трубы.', seg('T', 'content', S.T.content || 'task', [['task', 'По заданию'], ['ext', 'Расширенный']], 'str'))}
             ${optRow('Раздел «Цель работы»', 'Выключите, если преподаватель не требует.', sw('secGoal'))}
             ${optRow('Раздел «Задание»', 'Условие задачи с данными варианта и перечень того, что требуется определить.', sw('secTask'))}
             ${optRow('Раздел «Исходные данные»', 'Значения варианта из таблицы пособия и таблица фона и ПДК. Выключено — отчёт сразу начинается с расчёта (раздел 1).', sw('secData'))}
@@ -437,7 +480,7 @@
           <div class="dact"><button class="btn" id="zip-all">${dlIcon()} Архив работы (.zip)</button></div>
           <p class="dhint">Архив: отчёт Word, полный расчёт в HTML (открывается в браузере, печатается), графики PNG, результаты в CSV (открываются в Excel) и сводка ответов по всем вариантам.</p>
         </section>
-        <section class="dsec">
+        <section class="dsec set set-saves" data-set="сохранения">
           <h2>4. Сохранения</h2>
           <p class="dlead">Текущее состояние запоминается автоматически и восстанавливается при следующем открытии сайта; отдельно ведётся автосохранение. Чтобы держать несколько наборов (например, свой вариант и вариант одногруппника), сохраните их в слоты.</p>
           <div class="opts slots" id="slots">${slotsHtml()}</div>
@@ -615,7 +658,7 @@
     main.innerHTML = `<article class="sheet">
       <header class="sheet-head"><div><div class="eyebrow">Задача 1.${TK()} · этап ${no}</div><h1>${esc(title(tab))}</h1><p class="lead">${leadText(tab)}</p></div>${stamp(no)}</header>
       <div class="sheet-body rep"><div class="kpis">${kpis(tab)}</div><p class="calc-hint">${ICON_COPY} у каждой формулы копирует её в формате MathML — в Word вставляется как редактируемое уравнение (Ctrl+V). Кнопка «TeX» копирует LaTeX.</p>
-        <div class="opts chk-bar"><div class="opt"><div class="opt-t"><b>Сверка с ручным расчётом</b><span id="chk-sum">${CHK.on ? '' : 'Под каждой формулой появится поле для вашего значения: утилита сравнит его и подскажет возможную причину расхождения — округление, единицы, знак или ошибка в подстановке.'}</span></div><div class="opt-c" style="display:flex;gap:10px;align-items:center">${CHK.on ? '<button class="btn" id="chk-clr">Очистить</button>' : ''}<label class="sw"><input type="checkbox" id="chk-on" ${CHK.on ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">Сверка</span></label></div></div></div>
+        <div class="opts chk-bar"><div class="opt"><div class="opt-t"><b>Сверка с ручным расчётом</b><span id="chk-sum">${CHK.on ? '' : 'Под каждой формулой появится поле для вашего значения: утилита сравнит его и подскажет возможную причину расхождения — округление, единицы, знак или ошибка в подстановке.'}</span></div><div class="opt-c" style="display:flex;gap:10px;align-items:center">${CHK.on ? '<button class="btn" id="chk-clr">Очистить</button>' : ''}<label class="sw"><input type="checkbox" id="chk-on" ${CHK.on ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">Сверка</span></label></div>${CHK.on || !window.SUITE || !SUITE.chkEx ? '' : (S.R && S.R.o && S.R.o.f ? SUITE.chkEx('f = 10³W²D/(H²ΔT) = ' + fk(S.R.o.f, 2), fk(S.R.o.f, 2)) : SUITE.chkEx('C<sub>max</sub> = AMFmn/(H²∛(V<sub>i</sub>ΔT))', '…'))}</div></div>
         ${renderItems(rep.items, tab)}
         ${tab === 's3' ? `<h2>Вывод</h2>${REPORT.conclusions(R, L).map(t => `<p>${t}</p>`).join('')}<div class="dact"><button class="btn primary" data-docx="1">${dlIcon()} Отчёт Word (.docx)</button></div>` : ''}
         <div style="display:flex;justify-content:space-between;gap:8px;margin-top:22px;flex-wrap:wrap">${no > 1 ? `<button class="btn" data-go="s${no - 1}">← Этап ${no - 1}</button>` : '<button class="btn" data-go="data">← Исходные данные</button>'}${no < 3 ? `<button class="btn" data-go="s${no + 1}">Этап ${no + 1} →</button>` : '<button class="btn" data-go="all">Сводка по вариантам →</button>'}</div>

@@ -82,7 +82,7 @@
     VKEYS.forEach(k => d[k] = v[k]);
     d.eta = 1; d.Fg = 1; d.Fd = 3;
     SUB.forEach(s => { d['cf_' + s.key] = s.Cf; d['pdk_' + s.key] = s.PDK; });
-    return Object.assign(d, { mode: 'book', sumEff: true, hmin: true, prof: true });
+    return Object.assign(d, { mode: 'book', sumEff: false, hmin: false, prof: false });
   }
   function fromVariant(no, task) {
     task = TX(task) ? +task : +task === 2 ? 2 : 1;
