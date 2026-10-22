@@ -70,7 +70,7 @@
   const VKEYS1 = ['Mco', 'Mno2', 'Mso2', 'Mdust', 'H', 'D', 'W', 'Tg', 'Tv', 'A'];
   const VKEYS2 = ['Mdust', 'cf_dust', 'H', 'D', 'W', 'Tg', 'Tv', 'A'];
   const VKEYS = VKEYS1;
-  /* задачи 1.3–1.6 описаны в tasks.js (реестр ECOTASKS) */
+  /* задачи 1.3–1.8 описаны в tasks.js (реестр ECOTASKS) */
   const TX = task => +task >= 3 && root.ECOTASKS ? root.ECOTASKS[+task] : null;
   const vkeys = task => TX(task) ? TX(task).vkeys : +task === 2 ? VKEYS2 : VKEYS1;
   const vlist = task => TX(task) ? TX(task).variants : +task === 2 ? D.variants2 : D.variants;

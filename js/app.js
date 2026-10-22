@@ -7,8 +7,8 @@
   const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* варианты текущей задачи: 1.1 — табл. 1.2, 1.2 — табл. 1.3 */
-  const TK = () => { const t = S.P ? +S.P.task : 1; return t >= 1 && t <= 6 ? t : 1; };
-  const SP = () => L.TX(TK());                                   // спецификация задач 1.3–1.6 (tasks.js) или null
+  const TK = () => { const t = S.P ? +S.P.task : 1; return t >= 1 && t <= 8 ? t : 1; };
+  const SP = () => L.TX(TK());                                   // спецификация задач 1.3–1.8 (tasks.js) или null
   const TBL = t => { t = t || TK(); return L.TX(t) ? L.TX(t).table : '1.' + (t + 1); };
   const tpre = () => TK() > 1 ? 't' + TK() : '';
   const fin2 = x => x === null || x === undefined || x === '' ? '–' : fin(x);
@@ -65,7 +65,7 @@
   const clampV = v => Math.min(VMAXf(), Math.max(VMIN, v | 0));
   function load() {
     const st = ls.get('state');
-    const h = (location.hash || '').match(/^#(?:t([1-6]))?v(\d+)(?:-(s\d|data|all))?(?:&s=([\w-]+))?$/);
+    const h = (location.hash || '').match(/^#(?:t([1-8]))?v(\d+)(?:-(s\d|data|all))?(?:&s=([\w-]+))?$/);
     const ht = h && h[1] ? +h[1] : 1;
     if (h) h.splice(1, 1);
     if (h) S.P = { task: ht };
@@ -405,6 +405,7 @@
           <div class="opts">
             ${optRow('Промежуточные значения', sp ? sp.modeText : '«Как в методичке» — π = 3,14 и округление f, V<sub>i</sub>, m, V<sub>m</sub>, n, d до 0,01, ПДВ до 0,01 г/с: числа совпадают с примером решения. «Точно» — без округлений.', seg('P', 'mode', P.mode || 'book', [['book', 'Как в методичке'], ['exact', 'Точно']], 'str'))}
             ${TK() !== 1 ? '' : optRow('Эффект суммации SO<sub>2</sub> + NO<sub>2</sub>', 'Проверка по формуле (1.1): сумма отношений концентраций к ПДК не больше 1. В примере пособия не выполняется.', swP('sumEff'))}
+            ${sp && sp.opts ? sp.opts.map(o => optRow(o[0], o[1], swP(o[2]))).join('') : ''}
             ${sp ? '' : optRow('Наименьшая высота трубы', 'Альтернатива очистке: при какой высоте H выполняется C<sub>max</sub> + C<sub>ф</sub> ≤ ПДК (формула (1.27) с подбором H).', swP('hmin'))}
             ${sp ? '' : optRow('Распределение концентраций C(x)', 'График по оси факела и граница зоны превышения ПДК (форма кривой — по ОНД-86).', swP('prof'))}
           </div>
@@ -477,9 +478,9 @@
     S.P[k] = v;
     recompute();
   }
-  function setVariant(v) { v = clampV(v); const keep = {}; ['mode', 'sumEff', 'hmin', 'prof'].forEach(k => keep[k] = S.P[k]); S.P = Object.assign(L.fromVariant(v, TK()), keep); recompute(); }
+  function setVariant(v) { v = clampV(v); const keep = {}; ['mode', 'sumEff', 'hmin', 'prof'].concat(SP() && SP().opts ? SP().opts.map(o => o[2]) : []).forEach(k => keep[k] = S.P[k]); S.P = Object.assign(L.fromVariant(v, TK()), keep); recompute(); }
   function setTask(t) {
-    t = +t >= 1 && +t <= 6 ? +t : 1; if (t === TK()) return;
+    t = +t >= 1 && +t <= 8 ? +t : 1; if (t === TK()) return;
     const keep = {}; ['mode', 'sumEff', 'hmin', 'prof'].forEach(k => keep[k] = S.P[k]);
     S.P = Object.assign(L.fromVariant(1, t), keep); S.sum = null;
     $('#var-sel').innerHTML = ''; recompute(); toast('Задача 1.' + t + ': табл. ' + TBL(t) + ', ' + NVf() + ' вариантов');
