@@ -42,7 +42,7 @@
     org: 'МИНОБРНАУКИ РОССИИ\nФедеральное государственное бюджетное образовательное учреждение\nвысшего образования\n«Казанский национальный исследовательский технологический университет»\n(ФГБОУ ВО «КНИТУ»)',
     dept: '', discipline: 'Экология', kind: 'практической работе', title: '',
     group: '741-15', student: '', teacher: 'Савельев С. Н.', city: 'Казань', year: String(new Date().getFullYear()),
-    logo: true, explain: true, content: 'task', readable: true, src: '', compact: false, secGoal: true, secTask: true, secData: true, secSrc: true
+    logo: true, explain: true, content: 'task', readable: true, src: '', compact: false, secGoal: true, secTask: true, secData: true, secSrc: true, eqNum: true
   };
   const ls = {
     get(k) { try { return JSON.parse(localStorage.getItem(PFX + k) || 'null'); } catch (e) { return null; } },
@@ -427,6 +427,7 @@
             ${optRow('Раздел «Цель работы»', 'Выключите, если преподаватель не требует.', sw('secGoal'))}
             ${optRow('Раздел «Задание»', 'Условие задачи с данными варианта и перечень того, что требуется определить.', sw('secTask'))}
             ${optRow('Раздел «Исходные данные»', 'Значения варианта из таблицы пособия и таблица фона и ПДК. Выключено — отчёт сразу начинается с расчёта (раздел 1).', sw('secData'))}
+            ${optRow('Номера формул', '(1), (2)… у правого края строки. Выключено — формулы без номеров.', sw('eqNum'))}
             ${optRow('Список использованных источников', 'Выключено — списка нет, ссылки [1] из текста, подписей таблиц и формул тоже убираются.', sw('secSrc'))}
             ${optRow('Шрифт 12 пт, интервал 1,0', 'Основной текст, таблицы и формулы — 12 пт с одинарным межстрочным интервалом; титульный лист не меняется. Выключено — 14 пт, интервал 1,5.', sw('compact'))}
             ${optRow('Улучшение читаемости', 'Не отрывать пояснение от формулы и пункты списков друг от друга при переходе на новую страницу.', sw('readable'))}
@@ -782,7 +783,7 @@
     document.body.appendChild(meas);
     const measure = t => { meas.innerHTML = katex.renderToString(texify(t), { displayMode: true, throwOnError: false, strict: 'ignore' }); const k = meas.querySelector('.katex'); return k ? k.getBoundingClientRect().width : 0; };
     const ctx = { S, L, omml, png, measure };
-    try { return await REPORT.build(ctx, S.T, { explain: S.T.explain, readable: S.T.readable, ext: S.T.content === 'ext', compact: !!S.T.compact }); } finally { meas.remove(); }
+    try { return await REPORT.build(ctx, S.T, { explain: S.T.explain, readable: S.T.readable, ext: S.T.content === 'ext', compact: !!S.T.compact, eqNum: S.T.eqNum !== false }); } finally { meas.remove(); }
   }
   function docxName() { return 'Otchet_zad1' + TK() + '_var' + S.P.variant + '.docx'; }
   async function makeDocx(btn) {

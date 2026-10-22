@@ -139,7 +139,8 @@
   function numbered(doc, tex, ctx, cnt, keep) {
     cnt.eq++;
     const w = ctx.measure(tex), lim = LIMIT * 0.88;
-    doc.mathNum(ctx.omml(tex, false, w > lim ? Math.max(18, Math.floor(MS * lim / w)) : MS), cnt.eq, keep);
+    const om = ctx.omml(tex, false, w > lim ? Math.max(18, Math.floor(MS * lim / w)) : MS);
+    if (cnt.noNum) doc.math(om, keep ? { keepNext: true } : undefined); else doc.mathNum(om, cnt.eq, keep);
   }
 
   function addItems(doc, items, ctx, opt, cnt) {
@@ -293,7 +294,7 @@
         'рассчитать ПДВ отдельно по каждому выбрасываемому веществу с учётом фоновых концентраций',
         'определить требуемую степень очистки и дать рекомендации по снижению выбросов, если фактический выброс какого-либо вещества превышает ПДВ']);
     }
-    const cnt = { fig: 0, tab: 0, eq: 0, seen: {}, expl: {} };
+    const cnt = { fig: 0, tab: 0, eq: 0, seen: {}, expl: {}, noNum: opt.eqNum === false };
     if (secData && SP) {
       H2('Исходные данные');
       doc.p('Согласно варианту № ' + P.variant + ' (табл. ' + SP.table + ' [1]) приняты следующие значения:', { keepNext: true });
