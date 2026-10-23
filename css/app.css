@@ -55,7 +55,7 @@
 .sum-table { max-height: none; }
 .sum-table td, .sum-table th { white-space: nowrap; font-size: 13px; }
 .sum-table tr[data-v] { cursor: pointer; }
-.ex-tbl th.on, .ex-tbl th span { color: var(--accent); }
+.ex-tbl th.on { color: var(--accent); }
 
 .task-box select { min-width: 64px; border-inline: 0; }
 @media (max-width: 640px) { .var-box.task-box { flex: 0 0 auto; } .var-box.task-box select { min-width: 70px; flex: 0 0 auto; } }

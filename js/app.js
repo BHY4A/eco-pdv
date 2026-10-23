@@ -224,7 +224,7 @@
   }
   function exHtml(key) {
     const d = PV[key]();
-    const box = (lbl, body, on) => `<div class="ex${on ? ' on' : ''}"><div class="ex-h">${lbl}${on ? '<span>сейчас</span>' : ''}</div><div class="ex-b">${body}</div></div>`;
+    const box = (lbl, body, on) => `<div class="ex${on ? ' on' : ''}"><div class="ex-h"><span class="ex-l">${lbl}</span>${on ? '<span class="ex-now">сейчас</span>' : ''}</div><div class="ex-b">${body}</div></div>`;
     if (d.table) return `<div class="ex on ex-wide"><div class="ex-b">${d.table}</div></div>`;
     return box(d.la, d.a, !d.b_on) + box(d.lb, d.b, d.b_on) + (d.note ? `<p class="ex-note">${d.note}</p>` : '');
   }
