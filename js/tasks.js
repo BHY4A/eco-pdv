@@ -710,7 +710,7 @@
     stat(list) { const ok = list.filter(s => s.R), n = ok.filter(s => s.R.E > 0).length; return `Очистка экономически эффективна (Э > 0) в ${n} ${word(n, 'варианте', 'вариантах', 'вариантах')} из ${ok.length}.`; },
     logLine: R => `У = ${money(R.U)}, Э = ${money(R.E)} руб./год`,
     csv(R) { const num = x => String(x).replace('.', ','); return ['Вариант;' + R.P.variant, 'Уз;' + num(R.Uz), 'Ус;' + num(R.Us), 'Уп;' + num(R.Up), 'Ук;' + num(R.Uk), 'R, чел.;' + R.Rp, 'S, га;' + num(R.S), 'Ф, млн руб.;' + num(R.F), 'У, руб./год;' + num(R.U), 'З, руб./год;' + num(R.Z), 'Э, руб./год;' + num(R.E)].join('\r\n'); },
-    headLine: P => `пыль ${fin(P.cd)} мг/м³, SO₂ ${fin(P.cs)} мг/м³, R = ${fin2(P.Rk)} тыс. чел., S = ${fin2(P.Sga)} га, Ф = ${fin(P.Fm)} млн руб., стоимость очистки ${money(+P.Z)} руб./год`,
+    headLine: P => `пыль ${fin(P.cd)} мг/м³, SO₂ ${fin(P.cs)} мг/м³, R = ${fin2(P.Rk)} тыс. чел., S = ${fin2(P.Sga)} га, Ф = ${fin2(P.Fm)} млн руб., стоимость очистки ${money(+P.Z)} руб./год`,
     plots: {},
     modeRows: (a, b) => [['У, руб./год', a.U, b.U], ['Э, руб./год', a.E, b.E]],
     rep: {
