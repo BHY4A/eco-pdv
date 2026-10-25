@@ -268,10 +268,16 @@
       const fig = this.figs().b;
       return { la: 'Без графика (как в пособии)', a: '<p class="ex-p">Только C<sub>max</sub> и X<sub>max</sub> — без распределения по оси факела.</p>', lb: 'С графиком C(x)', b: fig, b_on: !!S.P.prof };
     },
+    uFix() {
+      const on = S.P.uFix !== false, a = on ? S.R : altR({ uFix: true }), b = on ? altR({ uFix: false }) : S.R; L.use(S.R);
+      const body = r => r ? `<div class="ex-f">U = ${fin(r.U)} м/с</div><div class="ex-f">f<sub>газ</sub> = ${fk(r.fGas, 2)}, f<sub>пыли</sub> = ${fk(r.fDust, 2)}</div><div class="ex-f">У<sub>атм</sub> = ${window.ECOTASKS_UTIL ? ECOTASKS_UTIL.money(r.Uatm) : fin(Math.round(r.Uatm))} руб./год</div>` : '';
+      const note = a && b && a.U === b.U ? 'В этом варианте скорость ветра в табл. 1.19 напечатана правильно (или введена вручную) — расчёт не меняется.' : '';
+      return { la: '1,0…2,2 м/с (рекомендуется)', a: body(a), lb: 'Как напечатано (10…22 м/с)', b: body(b), b_on: !on, note };
+    },
     indK() {
       const on = !!S.P.indK, a = on ? altR({ indK: false }) : S.R, b = on ? S.R : altR({ indK: true }); L.use(S.R);
       const body = r => r ? `<div class="ex-f">У<sub>п</sub> = ${fin(r.Up)} руб./год</div><div class="ex-f">У = ${fin(r.U)} руб./год</div>` : '';
-      return { la: 'Без коэффициентов (как в пособии)', a: body(a), lb: 'С коэффициентами табл. 1.14', b: body(b), b_on: on };
+      return { la: 'Без коэффициентов, как в пособии (рекомендуется)', a: body(a), lb: 'С коэффициентами табл. 1.14', b: body(b), b_on: on };
     },
     mode() {
       const a = altR({ mode: 'book' }), b = altR({ mode: 'exact' });
@@ -311,7 +317,7 @@
     return `<div class="seg" role="radiogroup" data-scope="${scope}" data-key="${key}" data-kind="${kind}">${opts.map(([v, l]) => `<button type="button" role="radio" aria-checked="${String(v) === String(cur)}" data-val="${v}">${l}</button>`).join('')}</div>`;
   }
   function sw(key) { return `<label class="sw"><input type="checkbox" data-tkey="${key}" ${S.T[key] ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">вкл.</span></label>`; }
-  function swP(key) { return `<label class="sw"><input type="checkbox" data-pkey="${key}" ${S.P[key] ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">вкл.</span></label>`; }
+  function swP(key) { const d = SP() && SP().defaults ? SP().defaults[key] : undefined; return `<label class="sw"><input type="checkbox" data-pkey="${key}" ${(S.P[key] === undefined ? d : S.P[key]) ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">вкл.</span></label>`; }
 
   /* ---------- ссылка «поделиться» ---------- */
   function shareUrl() {
