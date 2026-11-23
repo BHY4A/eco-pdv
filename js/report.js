@@ -331,7 +331,7 @@
       if (!SP && opt.ext && (P.prof || P.hmin)) src.push(META.ond);
       src.forEach((t, k) => doc.p((k + 1) + ' ' + t.replace(/\.?$/, '.')));
     } else doc.body = doc.body.map(x => x.replace(/ \[1\]/g, ''));   // без списка источников ссылки [1] не нужны
-    return doc.build({ title: 'Отчёт: задача 1.' + R.task + ', вариант ' + P.variant, author: T.student || '' });
+    return doc.build({ title: 'Отчёт: задача ' + ctx.L.tlabel(R.task) + ', вариант ' + P.variant, author: T.student || '' });
   }
   root.REPORT = { build, META, conclusions };
 })(typeof window !== 'undefined' ? window : globalThis);

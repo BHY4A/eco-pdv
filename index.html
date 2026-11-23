@@ -4,24 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Промышленная экология · ПДВ</title>
-<meta name="description" content="Расчёт рассеивания вредных веществ в атмосфере и нормативов ПДВ по вариантам и задачи раздела 1 (1.1–1.8): Cmax, Xmax, ПДВ, фактический выброс, продукты сгорания топлива, загазованность у автодороги, экономический ущерб по зонам и укрупнённая оценка ущерба, отчёт Word.">
+<meta name="description" content="Расчёт рассеивания вредных веществ в атмосфере и нормативов ПДВ по учебнику Фридланда С. В. и др. (2008), задачи 1.1–1.4, 1.7, 2.4: Cmax, Xmax, ПДВ, фактический выброс, продукты сгорания топлива, укрупнённая оценка ущерба атмосфере, экономическая эффективность очистки сточных вод, отчёт Word.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Промышленная экология · ПДВ">
-<meta property="og:description" content="Расчёт рассеивания вредных веществ в атмосфере и нормативов ПДВ по вариантам и задачи раздела 1 (1.1–1.8): Cmax, Xmax, ПДВ, фактический выброс, продукты сгорания топлива, загазованность у автодороги, экономический ущерб по зонам и укрупнённая оценка ущерба, отчёт Word.">
+<meta property="og:description" content="Расчёт рассеивания вредных веществ в атмосфере и нормативов ПДВ по учебнику Фридланда С. В. и др. (2008), задачи 1.1–1.4, 1.7, 2.4: Cmax, Xmax, ПДВ, фактический выброс, продукты сгорания топлива, укрупнённая оценка ущерба атмосфере, экономическая эффективность очистки сточных вод, отчёт Word.">
 <meta property="og:url" content="https://bhy4a.github.io/eco-pdv/">
 <meta property="og:image" content="https://bhy4a.github.io/eco-pdv/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script src="js/suite.js?v=2a56d55770"></script>
+<script src="js/suite.js?v=ea10778c6b"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Jura:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="vendor/katex/katex.min.css">
-<link rel="stylesheet" href="css/suite.css?v=a4ec66cf78">
-<link rel="stylesheet" href="css/app.css?v=82cfaeed48">
-<link rel="stylesheet" href="css/mdoc.css?v=7ed8e00698">
+<link rel="stylesheet" href="css/suite.css?v=6c55127ee1">
+<link rel="stylesheet" href="css/app.css?v=61016d46d4">
+<link rel="stylesheet" href="css/mdoc.css?v=ab0e190470">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23557313'/%3E%3Cpath d='M5 27h22' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M9 27V15h5v12M18 27v-7l6 3v4' fill='none' stroke='white' stroke-width='2.2' stroke-linejoin='round'/%3E%3Ccircle cx='12.5' cy='10' r='2.4' fill='none' stroke='white' stroke-width='1.9'/%3E%3Ccircle cx='17.6' cy='7' r='2.9' fill='none' stroke='white' stroke-width='1.9'/%3E%3Ccircle cx='23.6' cy='5.4' r='2' fill='none' stroke='white' stroke-width='1.9'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -29,11 +29,11 @@
   <div class="top-in">
     <div class="brand">
       <svg width="34" height="34" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6" fill="var(--accent)"/><g color="var(--accent-ink)"><path d="M5 27h22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M9 27V15h5v12M18 27v-7l6 3v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12.5" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="17.6" cy="7" r="2.9" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="23.6" cy="5.4" r="2" fill="none" stroke="currentColor" stroke-width="1.9"/></g></svg>
-      <div><b>Промышленная экология · ПДВ</b><small>Задачи 1.1–1.8: рассеивание, ПДВ, продукты сгорания, автотранспорт, ущерб · отчёт Word</small></div>
+      <div><b>Промышленная экология · ПДВ</b><small>Задачи 1.1–1.4, 1.7, 2.4: рассеивание, ПДВ, продукты сгорания, ущерб, сточные воды · отчёт Word</small></div>
     </div>
     <div class="var-ctl">
       <label for="task-sel">Задача</label>
-      <div class="var-box task-box"><select id="task-sel" aria-label="Номер задачи"><option value="1">1.1</option><option value="2">1.2</option><option value="3">1.3</option><option value="4">1.4</option><option value="5">1.5</option><option value="6">1.6</option><option value="7">1.7</option><option value="8">1.8</option></select></div>
+      <div class="var-box task-box"><select id="task-sel" aria-label="Номер задачи"><option value="1">1.1</option><option value="2">1.2</option><option value="3">1.3</option><option value="4">1.4</option><option value="8">1.7</option><option value="9">2.4</option></select></div>
       <label for="var-sel">Вариант</label>
       <div class="var-box"><button id="var-prev" aria-label="Предыдущий вариант">‹</button><select id="var-sel" aria-label="Номер варианта"></select><button id="var-next" aria-label="Следующий вариант">›</button></div>
     </div>
@@ -51,16 +51,16 @@
 <script src="vendor/katex/katex.min.js"></script>
 <script src="vendor/plotly.min.js"></script>
 <script src="vendor/jszip.min.js"></script>
-<script src="js/data.js?v=45c5294792"></script>
-<script src="js/labs.js?v=5677bd6480"></script>
-<script src="js/tasks.js?v=24ec637842"></script>
-<script src="js/explain.js?v=524c31b974"></script>
-<script src="js/charts.js?v=ced81fe218"></script>
-<script src="js/omml.js?v=4ade6f03ed"></script>
-<script src="js/docx.js?v=f67ca04c4e"></script>
-<script src="js/report.js?v=f7f3feff22"></script>
-<script src="js/mdoc.js?v=a01741d21d"></script>
-<script src="js/theory.js?v=eb0bd8df9b"></script>
-<script src="js/app.js?v=67e87e90b6"></script>
+<script src="js/data.js?v=82a7cb2ad4"></script>
+<script src="js/labs.js?v=7c632b4e0f"></script>
+<script src="js/tasks.js?v=071f8f8d37"></script>
+<script src="js/explain.js?v=33b79ede9b"></script>
+<script src="js/charts.js?v=9aa9b04d6d"></script>
+<script src="js/omml.js?v=999cc61673"></script>
+<script src="js/docx.js?v=24c8eaa54b"></script>
+<script src="js/report.js?v=2ec31a1e70"></script>
+<script src="js/mdoc.js?v=53be8bcf7a"></script>
+<script src="js/theory.js?v=bbdfff3a6e"></script>
+<script src="js/app.js?v=06c6fed45e"></script>
 </body>
 </html>

@@ -7,7 +7,9 @@
   const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   /* варианты текущей задачи: 1.1 — табл. 1.2, 1.2 — табл. 1.3 */
-  const TK = () => { const t = S.P ? +S.P.task : 1; return t >= 1 && t <= 8 ? t : 1; };
+  const TK = () => { const t = S.P ? +S.P.task : 1; return L.TASKS.includes(t) ? t : 1; };
+  const TL = t => L.tlabel(t || TK());                            // номер задачи по учебнику: 1.1 … 1.7, 2.4
+  const TF = () => TL().replace('.', '');                         // для имён файлов: 11, 17, 24
   const SP = () => L.TX(TK());                                   // спецификация задач 1.3–1.8 (tasks.js) или null
   const TBL = t => { t = t || TK(); return L.TX(t) ? L.TX(t).table : '1.' + (t + 1); };
   const tpre = () => TK() > 1 ? 't' + TK() : '';
@@ -65,8 +67,8 @@
   const clampV = v => Math.min(VMAXf(), Math.max(VMIN, v | 0));
   function load() {
     const st = ls.get('state');
-    const h = (location.hash || '').match(/^#(?:t([1-8]))?v(\d+)(?:-(s\d|data|all))?(?:&s=([\w-]+))?$/);
-    const ht = h && h[1] ? +h[1] : 1;
+    const h = (location.hash || '').match(/^#(?:t([1-9]))?v(\d+)(?:-(s\d|data|all))?(?:&s=([\w-]+))?$/);
+    const ht = h && h[1] && L.TASKS.includes(+h[1]) ? +h[1] : 1;   // задачи, которых нет в учебнике (t5–t7), открываются как 1.1
     if (h) h.splice(1, 1);
     if (h) S.P = { task: ht };
     if (h && h[3]) {
@@ -79,6 +81,7 @@
       S.tab = h[2] || (st && st.tab) || 'data';
     } else if (st && st.P) { S.P = Object.assign(L.defaults(), st.P); S.tab = st.tab || 'data'; }
     else { S.P = L.fromVariant(1); S.tab = 'data'; }
+    if (!L.TASKS.includes(+S.P.task || 1)) { S.P = L.fromVariant(1, 1); S.tab = 'data'; }
     if (S.tab !== 'data' && !TABS.includes(S.tab)) S.tab = 'data';
   }
   function setHash() { try { history.replaceState(null, '', '#' + tpre() + 'v' + S.P.variant + '-' + S.tab); } catch (e) { /* ignore */ } }
@@ -116,7 +119,7 @@
   function stamp(no) {
     const P = S.P;
     const head = `<table class="stamp" aria-label="Штамп"><tr><td class="k">Работа</td><td class="v">${no === 'all' ? 'Сводка' : no ? 'Этап ' + no : 'Данные'}</td><td class="k">Лист</td><td class="v">${no === 'all' ? '—' : no || 0} / 3</td></tr>`;
-    if (SP()) return head + `<tr><td class="k">Вариант</td><td class="v">${P.variant}${isEdited() ? '*' : ''}</td><td class="k">Задача</td><td class="v">1.${TK()}</td></tr>` + SP().stamp(P) + '</table>';
+    if (SP()) return head + `<tr><td class="k">Вариант</td><td class="v">${P.variant}${isEdited() ? '*' : ''}</td><td class="k">Задача</td><td class="v">${TL()}</td></tr>` + SP().stamp(P) + '</table>';
     return head + `
       <tr><td class="k">Вариант</td><td class="v">${P.variant}${isEdited() ? '*' : ''}</td><td class="k">A</td><td class="v">${fin(P.A)}</td></tr>
       <tr><td class="k">Труба</td><td class="v" colspan="3">H = ${fin(P.H)} м, D = ${fin(P.D)} м</td></tr>
@@ -271,8 +274,13 @@
     uFix() {
       const on = S.P.uFix !== false, a = on ? S.R : altR({ uFix: true }), b = on ? altR({ uFix: false }) : S.R; L.use(S.R);
       const body = r => r ? `<div class="ex-f">U = ${fin(r.U)} м/с</div><div class="ex-f">f<sub>газ</sub> = ${fk(r.fGas, 2)}, f<sub>пыли</sub> = ${fk(r.fDust, 2)}</div><div class="ex-f">У<sub>атм</sub> = ${window.ECOTASKS_UTIL ? ECOTASKS_UTIL.money(r.Uatm) : fin(Math.round(r.Uatm))} руб./год</div>` : '';
-      const note = a && b && a.U === b.U ? 'В этом варианте скорость ветра в табл. 1.19 напечатана правильно (или введена вручную) — расчёт не меняется.' : '';
+      const note = a && b && a.U === b.U ? 'В этом варианте скорость ветра в табл. 1.17 напечатана правильно (или введена вручную) — расчёт не меняется.' : '';
       return { la: '1,0…2,2 м/с (рекомендуется)', a: body(a), lb: 'Как напечатано (10…22 м/с)', b: body(b), b_on: !on, note };
+    },
+    aFex() {
+      const on = S.P.aFex !== false, a = on ? S.R : altR({ aFex: true }), b = on ? altR({ aFex: false }) : S.R; L.use(S.R);
+      const body = r => r && r.by ? `<div class="ex-f">A<sub>F</sub> = ${fk(r.by.cf.A, 1)} усл. т/т</div><div class="ex-f">Σμ = ${ECOTASKS_UTIL.money(r.mu)} усл. т/год</div><div class="ex-f">У<sub>атм</sub> = ${ECOTASKS_UTIL.money(r.Uatm)} руб./год</div>` : '';
+      return { la: 'a = 430, как в примере решения (рекомендуется)', a: body(a), lb: 'a = 489,9 по табл. 1.15', b: body(b), b_on: !on };
     },
     indK() {
       const on = !!S.P.indK, a = on ? altR({ indK: false }) : S.R, b = on ? S.R : altR({ indK: true }); L.use(S.R);
@@ -434,7 +442,7 @@
       : `<details class="adv"><summary>${T2 ? 'ПДК пыли и коэффициенты F, η' : 'Фоновые концентрации, ПДК и коэффициенты F, η'}</summary><div class="in"><div class="form-grid">${(T2 ? ADV.filter(f => ['eta', 'Fd', 'pdk_dust'].includes(f[0])) : ADV).map(f => fld(f[0], f[1], f[2], f[3], P[f[0]], String(DEF[f[0]]) !== String(P[f[0]]))).join('')}</div>
             <p class="dhint">${T2 ? 'По условию задачи 1.2: ПДК<sup>пыли</sup> = 0,5 мг/м³, F = 3, N = 1; фоновая концентрация пыли задана в табл. 1.3 для каждого варианта. ' : ''}По умолчанию — условие задачи 1.1: C<sub>ф</sub><sup>CO</sup> = 1,5, C<sub>ф</sub><sup>NO₂</sup> = 0,03, C<sub>ф</sub><sup>SO₂</sup> = 0,1, C<sub>ф</sub><sup>пыли</sup> = 0,2 мг/м³; ПДК: CO — 5, NO₂ — 0,085, SO₂ — 0,5, пыль — 0,5 мг/м³. η = 1 — ровная местность. F для пыли: 2 при степени очистки ≥ 90 %, 2,5 при 75–90 %, 3 — менее 75 % или без очистки.</p></div></details>`;
     main.innerHTML = `<article class="sheet">
-      <header class="sheet-head"><div><div class="eyebrow">${sp ? 'Задача 1.' + TK() + ' · табл. ' + sp.table + ' «' + sp.vcaption + '»' : T2 ? 'Задача 1.2 · табл. 1.3 «Варианты задачи 1.2 по расчёту C<sub>max</sub> пыли и ПДВ пыли»' : 'Задача 1.1 · табл. 1.2 «Варианты задачи 1.1 по расчёту C<sub>max</sub> и ПДВ»'}</div><h1>Вариант ${P.variant}${vname}</h1>
+      <header class="sheet-head"><div><div class="eyebrow">${sp ? 'Задача ' + TL() + ' · табл. ' + sp.table + ' «' + sp.vcaption + '»' : T2 ? 'Задача 1.2 · табл. 1.3 «Варианты задачи 1.2 по расчёту C<sub>max</sub> пыли и ПДВ пыли»' : 'Задача 1.1 · табл. 1.2 «Варианты задачи 1.1 по расчёту C<sub>max</sub> и ПДВ»'}</div><h1>Вариант ${P.variant}${vname}</h1>
         <p class="lead">${sp ? sp.dataLead + ' Задача и номер варианта выбираются вверху страницы; всё пересчитывается автоматически, изменённые поля подсвечиваются.' : ''}${sp ? '' : `Задача выбирается вверху страницы (1.1 — паросиловое производство, CO, NO₂, SO₂ и пыль; 1.2 — выброс пыли вытяжной вентиляцией), рядом — номер варианта; всё пересчитывается автоматически. Изменённые поля подсвечиваются. Вариант 1 — пример решения из пособия (для сверки: ${T2 ? 'ПДВ<sup>пыли</sup> = 0,98 г/с, ε = 75,5 %' : 'C<sub>max</sub><sup>пыли</sup> = 0,60745 мг/м³, ПДВ<sup>пыли</sup> = 6,57 г/с, ε = 50,6 %'}).`}</p></div>
         ${stamp(0)}
       </header>
@@ -524,13 +532,13 @@
     const zeroOk = sp ? (sp.zero || []).includes(k) : /^(M|cf_)/.test(k), negOk = k === 'Tv' || !!(sp && (sp.neg || []).includes(k));
     if (!negOk && (v < 0 || (v === 0 && !zeroOk))) { toast(zeroOk ? 'Значение не может быть отрицательным' : 'Значение должно быть положительным'); el.value = String(S.P[k]).replace('.', ','); return; }
     if (!sp && (k === 'Fg' || k === 'Fd') && (v < 1 || v > 3)) { toast('Коэффициент F — от 1 до 3'); el.value = String(S.P[k]).replace('.', ','); return; }
-    if (TK() <= 3 && k === 'Tg' && !(v > S.P.Tv) || TK() <= 3 && k === 'Tv' && !(v < S.P.Tg)) { toast('Температура газов должна быть выше температуры воздуха'); el.value = String(S.P[k]).replace('.', ','); return; }
+    if (TK() <= 3 && TK() !== 2 && (k === 'Tg' && !(v > S.P.Tv) || k === 'Tv' && !(v < S.P.Tg))) { toast('Температура газов должна быть выше температуры воздуха'); el.value = String(S.P[k]).replace('.', ','); return; }
     S.P[k] = v;
     recompute();
   }
   function setVariant(v) { v = clampV(v); const keep = {}; ['mode', 'sumEff', 'hmin', 'prof'].concat(SP() && SP().opts ? SP().opts.map(o => o[2]) : []).forEach(k => keep[k] = S.P[k]); S.P = Object.assign(L.fromVariant(v, TK()), keep); recompute(); }
   function setTask(t) {
-    t = +t >= 1 && +t <= 8 ? +t : 1; if (t === TK()) return;
+    t = L.TASKS.includes(+t) ? +t : 1; if (t === TK()) return;
     const keep = {}; ['mode', 'sumEff', 'hmin', 'prof'].forEach(k => keep[k] = S.P[k]);
     S.P = Object.assign(L.fromVariant(1, t), keep); S.sum = null;
     $('#var-sel').innerHTML = ''; recompute(); toast('Задача 1.' + t + ': табл. ' + TBL(t) + ', ' + NVf() + ' вариантов');
@@ -662,7 +670,7 @@
     const R = S.R, no = stNo(tab);
     const rep = R['L' + no];
     main.innerHTML = `<article class="sheet">
-      <header class="sheet-head"><div><div class="eyebrow">Задача 1.${TK()} · этап ${no}</div><h1>${esc(title(tab))}</h1><p class="lead">${leadText(tab)}</p></div>${stamp(no)}</header>
+      <header class="sheet-head"><div><div class="eyebrow">Задача ${TL()} · этап ${no}</div><h1>${esc(title(tab))}</h1><p class="lead">${leadText(tab)}</p></div>${stamp(no)}</header>
       <div class="sheet-body rep"><div class="kpis">${kpis(tab)}</div><p class="calc-hint">${ICON_COPY} у каждой формулы копирует её в формате MathML — в Word вставляется как редактируемое уравнение (Ctrl+V). Кнопка «TeX» копирует LaTeX.</p>
         <div class="opts chk-bar"><div class="opt"><div class="opt-t"><b>Сверка с ручным расчётом</b><span id="chk-sum">${CHK.on ? '' : 'Под каждой формулой появится поле для вашего значения: утилита сравнит его и подскажет возможную причину расхождения — округление, единицы, знак или ошибка в подстановке.'}</span></div><div class="opt-c" style="display:flex;gap:10px;align-items:center">${CHK.on ? '<button class="btn" id="chk-clr">Очистить</button>' : ''}<label class="sw"><input type="checkbox" id="chk-on" ${CHK.on ? 'checked' : ''}><span class="track" aria-hidden="true"></span><span class="sr">Сверка</span></label></div>${CHK.on || !window.SUITE || !SUITE.chkEx ? '' : (S.R && S.R.o && S.R.o.f ? SUITE.chkEx('f = 10³W²D/(H²ΔT) = ' + fk(S.R.o.f, 2), fk(S.R.o.f, 2)) : SUITE.chkEx('C<sub>max</sub> = AMFmn/(H²∛(V<sub>i</sub>ΔT))', '…'))}</div></div>
         ${renderItems(rep.items, tab)}
@@ -724,7 +732,7 @@
     const r0 = list.find(s => s.R); if (r0) L.use(r0.R);
     const rows = list.map(s => s.err ? `<tr><td class="num">${s.no}</td><td colspan="${SC().length - 1}">${esc(s.err)}</td></tr>` : `<tr data-v="${s.no}" class="${s.no === S.P.variant ? 'on' : ''}">${SC().map(c => `<td class="num">${c[1](s.R)}</td>`).join('')}</tr>`).join('');
     main.innerHTML = `<article class="sheet">
-      <header class="sheet-head"><div><div class="eyebrow">Для преподавателя и тьютора</div><h1>${TITLES.all}</h1><p class="lead">Ответы задачи 1.${TK()} по всем ${NVf()} вариантам табл. ${TBL()} при текущих настройках методики (${S.P.mode === 'exact' ? 'точный расчёт' : 'округление как в методичке'}${SP() ? '' : ', фон и ПДК — как на вкладке «Исходные данные»'}). Щелчок по строке открывает вариант.${TK() <= 3 ? ' C<sub>max</sub> — мг/м³, ПДВ — г/с.' : ''}</p></div>${stamp('all')}</header>
+      <header class="sheet-head"><div><div class="eyebrow">Для преподавателя и тьютора</div><h1>${TITLES.all}</h1><p class="lead">Ответы задачи ${TL()} по всем ${NVf()} вариантам табл. ${TBL()} при текущих настройках методики (${S.P.mode === 'exact' ? 'точный расчёт' : 'округление как в методичке'}${SP() ? '' : ', фон и ПДК — как на вкладке «Исходные данные»'}). Щелчок по строке открывает вариант.${TK() <= 3 ? ' C<sub>max</sub> — мг/м³, ПДВ — г/с.' : ''}</p></div>${stamp('all')}</header>
       <div class="sheet-body rep">
         <h2>Ответы по вариантам</h2>
         <div class="tbl var-table sum-table"><table><thead><tr>${SC().map(c => `<th class="num">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
@@ -734,7 +742,7 @@
         <p>${statLine(list)}</p>
       </div></article>`;
     $$('.sum-table tr[data-v]').forEach(tr => tr.onclick = () => { setVariant(+tr.dataset.v); go('s1'); });
-    $('#sum-csv').onclick = () => downloadText('Svodka_zad1' + TK() + '_vse_varianty.csv', '﻿' + sumCsv());
+    $('#sum-csv').onclick = () => downloadText('Svodka_zad' + TF() + '_vse_varianty.csv', '﻿' + sumCsv());
     $('#sum-copy').onclick = () => copyText(sumTsv(), 'Таблица скопирована — вставьте в Word или Excel');
     $('#all-docx').onclick = e => allReports(e.currentTarget);
   }
@@ -750,7 +758,7 @@
         try {
           S.P = Object.assign(L.fromVariant(v.no, TK()), keep); S.R = L.compute(S.P);
           const t0 = performance.now();
-          zip.file('Otchet_zad1' + TK() + '_var' + v.no + '.docx', await buildDocxBlob());
+          zip.file('Otchet_zad' + TF() + '_var' + v.no + '.docx', await buildDocxBlob());
           log.push(`Вариант ${v.no}: OK (${Math.round(performance.now() - t0)} мс) · ` + (SP() ? SP().logLine(S.R) : `${S.R.o.hot ? 'нагретый' : 'холодный'}, f = ${fk(S.R.o.f, 2)}, превышение ПДК: ${S.R.excList.map(x => x.s.short).join(', ') || 'нет'}`));
         } catch (e) { console.error(e); log.push(`Вариант ${v.no}: ОШИБКА — ${e.message}`); }
         await sleep(10);
@@ -759,7 +767,7 @@
     zip.file('log.txt', '\ufeff' + log.join('\r\n') + '\r\n');
     zip.file('Svodka_vse_varianty.csv', '\ufeff' + sumCsv());
     btn.innerHTML = '<span class="spinner"></span> Упаковка…';
-    downloadBlob('Otchety_zad1' + TK() + '_vse_varianty.zip', await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }));
+    downloadBlob('Otchety_zad' + TF() + '_vse_varianty.zip', await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }));
     const bad = log.filter(l => /ОШИБКА/.test(l)).length;
     toast(bad ? 'Готово, ошибок: ' + bad + ' — см. log.txt в архиве' : 'Готово: ' + log.length + ' отчётов');
     btn.disabled = false; btn.innerHTML = old;
@@ -834,7 +842,7 @@
     const ctx = { S, L, omml, png, measure };
     try { return await REPORT.build(ctx, S.T, { explain: S.T.explain, readable: S.T.readable, ext: S.T.content === 'ext', compact: !!S.T.compact, eqNum: S.T.eqNum !== false }); } finally { meas.remove(); }
   }
-  function docxName() { return 'Otchet_zad1' + TK() + '_var' + S.P.variant + '.docx'; }
+  function docxName() { return 'Otchet_zad' + TF() + '_var' + S.P.variant + '.docx'; }
   async function makeDocx(btn) {
     const old = btn.innerHTML; btn.disabled = true;
     try {
@@ -864,7 +872,7 @@
     btn.disabled = true; const old = btn.innerHTML;
     const prog = t => { btn.innerHTML = '<span class="spinner"></span>' + t; };
     try {
-      const zip = new JSZip(), root = 'Zadacha1' + TK() + '_Variant_' + S.P.variant + '/';
+      const zip = new JSZip(), root = 'Zadacha' + TF() + '_Variant_' + S.P.variant + '/';
       const ids = plotIds(), imgs = {};
       for (let k = 0; k < ids.length; k++) { prog(' Графики ' + (k + 1) + '/' + ids.length); const im = await plotPng(ids[k]); imgs[ids[k]] = im; zip.file(root + 'Report/img/' + ids[k] + '.png', im.data, { base64: true }); }
       zip.file(root + 'Report/report.html', reportHtml(Object.keys(imgs)));
@@ -875,7 +883,7 @@
       zip.file(root + docxName(), await buildDocxBlob());
       prog(' Упаковка…');
       const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-      downloadBlob('Zadacha1' + TK() + '_Variant_' + S.P.variant + '.zip', blob);
+      downloadBlob('Zadacha' + TF() + '_Variant_' + S.P.variant + '.zip', blob);
       toast('Архив сформирован');
     } catch (e) { console.error(e); toast('Ошибка экспорта: ' + e.message); }
     btn.disabled = false; btn.innerHTML = old;
@@ -891,7 +899,7 @@
       parts.push(h + '</section>');
     });
     parts.push(`<section><h1>Вывод</h1>${REPORT.conclusions(R, L).map(t => `<p>${t}</p>`).join('')}</section>`);
-    return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Задача 1.${TK()}, вариант ${P.variant}</title>
+    return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Задача ${TL()}, вариант ${P.variant}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <style>body{font:15px/1.5 "IBM Plex Sans","Segoe UI",Arial,sans-serif;color:#1a222b;max-width:1000px;margin:0 auto;padding:24px}
 h1{font-size:22px;border-bottom:2px solid #1a222b;padding-bottom:6px;margin-top:48px}h2{font-size:17px;margin-top:26px}
@@ -902,7 +910,7 @@ table{border-collapse:collapse;margin:10px 0;font-size:13px}td,th{border:1px sol
 figure{margin:14px 0}figure img{max-width:100%;border:1px solid #ccd4dd}figcaption{font-size:13px;color:#5a6776}
 .calc{border:1.5px dashed #a9b4c0;background:#f3f5f8;padding:6px 12px;margin:8px 0;border-radius:6px}.calc-math{overflow-x:auto}.calc-tools{display:none}.calc-desc{font-size:13px;color:#5a6776;border-top:1px dashed #ccd4dd;padding-top:4px}
 @media print{h1{page-break-before:always}section:first-child h1{page-break-before:avoid}}</style></head><body>
-<p><b>Задача 1.${TK()}, вариант ${P.variant}</b> · ${SP() ? esc(SP().headLine(P)) : `${['Mco', 'Mno2', 'Mso2', 'Mdust'].map(k => k.replace('M', 'M_') + ' = ' + fin(P[k]) + ' г/с').join(', ')}; H = ${fin(P.H)} м, D = ${fin(P.D)} м, W = ${fin(P.W)} м/с, Tг = ${fin(P.Tg)} °C, Tв = ${fin(P.Tv)} °C, A = ${fin(P.A)}`}</p>
+<p><b>Задача ${TL()}, вариант ${P.variant}</b> · ${SP() ? esc(SP().headLine(P)) : `${['Mco', 'Mno2', 'Mso2', 'Mdust'].map(k => k.replace('M', 'M_') + ' = ' + fin(P[k]) + ' г/с').join(', ')}; H = ${fin(P.H)} м, D = ${fin(P.D)} м, W = ${fin(P.W)} м/с, Tг = ${fin(P.Tg)} °C, Tв = ${fin(P.Tv)} °C, A = ${fin(P.A)}`}</p>
 ${parts.join('\n')}</body></html>`;
   }
 

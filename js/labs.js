@@ -191,7 +191,7 @@
     BOOK = P.mode !== 'exact';
     if (TX(P.task)) { const R = TX(P.task).compute(P); R.book = BOOK; R.task = +P.task; return R; }
     ['A', 'H', 'D', 'W', 'Tg', 'Tv', 'eta', 'Fg', 'Fd'].forEach(k => { if (!(+P[k] > 0) && k !== 'Tv') throw new Error('параметр ' + k + ' должен быть положительным'); });
-    if (!(P.Tg - P.Tv > 0)) throw new Error('температура выбрасываемой смеси должна быть выше температуры воздуха');
+    if (+P.task !== 2 && !(P.Tg - P.Tv > 0)) throw new Error('температура выбрасываемой смеси должна быть выше температуры воздуха');
     const T2 = +P.task === 2;
     const R = { P, book: BOOK, task: T2 ? 2 : 1 };
     const CD = T2 ? 3 : 5;                                   // знаков C_max в режиме «как в методичке»
@@ -242,9 +242,12 @@
     const TG = T2 ? 'T_{п}' : 'T_{г}', MIX = T2 ? 'пылевоздушной' : 'газовоздушной';
     L1.p(`Разность температур выбрасываемой ${MIX} смеси и окружающего воздуха:`);
     L1.eq('\\Delta T', TG + '-T_{в}', `${n0(P.Tg)}-${n0(P.Tv)}`, o.dT, '°C', nk(o.dT, 1));
+    if (!(o.dT > 0)) L1.check(`\\Delta T=${nk(o.dT, 1)}\\le 0`, true, 'Пылевоздушная смесь не нагрета относительно окружающего воздуха (ΔT ≤ 0), поэтому выбросы холодные: расчёт ведём по формулам для холодных выбросов (1.3), (1.14), (1.19)–(1.21), (1.26).');
+    else {
     L1.p('Коэффициент f, определяющий тип выброса, рассчитываем по формуле (1.6):');
     L1.eq('f', '10^3\\dfrac{W^2D}{H^2\\Delta T}', `\\dfrac{10^3\\cdot ${n0(P.W)}^2\\cdot ${n0(P.D)}}{${n0(P.H)}^2\\cdot ${nk(o.dT, 1)}}`, o.f, '', nk(o.f, 2));
-    L1.check(hot ? `f=${nk(o.f, 2)}<100` : `f=${nk(o.f, 2)}\\ge 100`, true, hot
+    }
+    if (o.dT > 0) L1.check(hot ? `f=${nk(o.f, 2)}<100` : `f=${nk(o.f, 2)}\\ge 100`, true, hot
       ? 'Выбросы нагретые: расчёт ведём по формулам для нагретых выбросов (1.2), (1.4), (1.10)–(1.13), (1.16)–(1.18), (1.25).'
       : 'Выбросы холодные: расчёт ведём по формулам для холодных выбросов (1.3), (1.14), (1.19)–(1.21), (1.26).');
     L1.h(`1.3. Объём ${MIX} смеси`);
@@ -416,6 +419,9 @@
 
   function use(R) { if (R) BOOK = !!R.book; }
   const _ = { Report, rd, book: () => BOOK, source, pdv, cmax, nCoef, tx, nk, n0, n };
-  const api = { _, TX, nkeys, vkeys, vlist, VKEYS2, use, compute, defaults, fromVariant, summary, profile, s1, fnum, fauto, fk, fin, n, nk, VKEYS, NKEYS, dustAdvice, GAS_ADVICE };
+  /* номер задачи по учебнику Фридланда (2008): внутренний номер 8 — задача 1.7, 9 — задача 2.4 */
+  const TASKS = [1, 2, 3, 4, 8, 9];
+  function tlabel(t) { t = +t; return TX(t) && TX(t).label ? TX(t).label : t === 8 ? '1.7' : '1.' + t; }
+  const api = { _, TX, TASKS, tlabel, nkeys, vkeys, vlist, VKEYS2, use, compute, defaults, fromVariant, summary, profile, s1, fnum, fauto, fk, fin, n, nk, VKEYS, NKEYS, dustAdvice, GAS_ADVICE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LABS = api;
 })(typeof window !== 'undefined' ? window : globalThis);

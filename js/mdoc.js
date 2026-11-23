@@ -324,6 +324,11 @@
     });
     return V.text[n];
   }
+  function pageIndex() {
+    var id = String(V.cur || '').replace(/^doc:/, ''), r = null;
+    ((window.THEORY && THEORY.docs) || []).forEach(function (d) { if (d.id === id && d.pages) r = d.pages; });
+    return r;
+  }
   function find(q, tried) {
     q = String(q || '').trim(); V.q = q;
     var nq = norm(q);
@@ -335,6 +340,8 @@
       if (pdf !== V.pdf) return;
       V.hits = [];
       tx.forEach(function (t, k) { var from = 0, j; while ((j = t.n.indexOf(nq, from)) >= 0) { V.hits.push(k + 1); from = j + nq.length; } });
+      /* скан без текстового слоя: страница из указателя pages встроенной методички */
+      if (!V.hits.length) { var ix = pageIndex(); if (ix) Object.keys(ix).forEach(function (k) { if (!V.hits.length && norm(k) === nq && ix[k] <= pdf.numPages) V.hits = [ix[k]]; }); }
       V.hit = V.hits.length ? 0 : -1;
       showHits();
       clearMarks();
